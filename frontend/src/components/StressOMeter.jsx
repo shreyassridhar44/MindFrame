@@ -1,6 +1,10 @@
 import React from 'react';
 import { Gauge } from 'lucide-react';
-import { getStressColor } from '../data/mock';
+const getStressColor = (level) => {
+  if (level < 30) return '#10B981'; // Green
+  if (level < 60) return '#F59E0B'; // Yellow
+  return '#EF4444'; // Red
+};
 
 const StressOMeter = ({ stressLevel, isActive }) => {
   const color = getStressColor(stressLevel);
