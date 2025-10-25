@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HomePage from './pages/Home'; // <-- Import your new Home page
 import DetectorPage from './pages/Detector';
-// import ProfilePage from './pages/ProfilePage'; // You can add this later
+import AboutPage from './pages/About'; // 1. Import the new About page
 
 function App() {
   return (
@@ -19,6 +19,9 @@ function App() {
         <Route path="/" element={<HomePage />} /> {/* <-- Root path now shows Home */}
         <Route path="/detector" element={<DetectorPage />} /> {/* <-- Detector path works */}
         
+        {/* 2. Added the new route for the About page */}
+        <Route path="/about" element={<AboutPage />} />
+
         {/* You can add this route later when you build the page */}
         {/* <Route path="/profile" element={<ProfilePage />} /> */}
       </Routes>

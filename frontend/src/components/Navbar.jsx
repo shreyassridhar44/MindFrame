@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Gauge, User } from 'lucide-react'; // Removed Activity icon
+import { Home, Gauge, Info } from 'lucide-react'; // 1. Imported the 'Info' icon
 
 const Navbar = () => {
   const location = useLocation();
@@ -8,22 +8,22 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    // Enhanced styling: subtle background, shadow, border
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200/80 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-3"> {/* Adjusted padding */}
+      <div className="max-w-7xl mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
-          {/* Logo/Title - Removed icon, enhanced text style */}
+          {/* Logo/Title */}
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-bold bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent group-hover:opacity-90 transition-opacity">
-              MindFrame {/* Changed Name - Use MoodTrack if you prefer */}
+              MindFrame
             </span>
           </Link>
 
-          {/* Navigation Links - Enhanced styling and hover effects */}
+          {/* Navigation Links */}
           <div className="flex items-center space-x-2">
             <NavLink to="/" icon={Home} label="Home" isActive={isActive('/')} />
             <NavLink to="/detector" icon={Gauge} label="Detector" isActive={isActive('/detector')} />
-            {/* <NavLink to="/profile" icon={User} label="Profile" isActive={isActive('/profile')} /> */} {/* Uncomment if you add a profile page */}
+            {/* 2. Added the new NavLink for the About page */}
+            <NavLink to="/about" icon={Info} label="About" isActive={isActive('/about')} />
           </div>
         </div>
       </div>
@@ -43,10 +43,8 @@ const NavLink = ({ to, icon: Icon, label, isActive }) => (
   >
     <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-teal-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
     <span className="font-medium text-sm">{label}</span>
-    {/* Subtle underline hover effect */}
     <span className={`absolute bottom-0 left-0 h-0.5 bg-teal-500 transition-all duration-300 ease-out ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
   </Link>
 );
-
 
 export default Navbar;

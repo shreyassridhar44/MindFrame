@@ -43,7 +43,6 @@ const formatDataForChart = (data) => {
 
 /**
  * Calculates a 0-100 stress level based on emotions.
- * You can make this logic as complex as you want.
  * @param {number[]} data - Array of 7 probabilities
  * @returns {number} - Stress level (0-100)
  */
@@ -137,15 +136,17 @@ const DetectorPage = () => {
       videoRef.current.srcObject = null;
     }
     setIsActive(false);
-    // Reset to default states
-    setStressLevel(0);
-    setEmotionChartData(formatDataForChart([]));
-    setCurrentInsight(null);
+    
+    // --- UPDATED ---
+    // The following lines were removed to preserve the last state:
+    // setStressLevel(0);
+    // setEmotionChartData(formatDataForChart([]));
+    // setCurrentInsight(null);
   };
 
-  /** 3. Captures a single frame and sends it to the API */
+  /** 3. Captures a single frame and sends to the API */
   const captureAndPredict = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !videoRef.current.srcObject) return;
 
     const context = canvasRef.current.getContext('2d');
     canvasRef.current.width = videoRef.current.videoWidth;
@@ -167,7 +168,12 @@ const DetectorPage = () => {
         body: JSON.stringify({ image: base64Image }),
       });
 
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error:", errorData.detail || 'API request failed');
+        // Don't throw, but maybe set an error state
+        return; 
+      }
 
       const data = await response.json(); // { emotion: "happy", all_predictions: [...] }
 
@@ -252,9 +258,10 @@ const DetectorPage = () => {
               stressLevel={stressLevel} 
               isActive={isActive} 
             />
+            {/* UPDATED: Changed prop to 'isLive' to match EmotionChart component */}
             <EmotionChart 
               emotions={emotionChartData} 
-              isActive={isActive} 
+              isLive={isActive} 
             />
             <InsightsPanel 
               insight={currentInsight}
@@ -268,3 +275,4 @@ const DetectorPage = () => {
 };
 
 export default DetectorPage;
+

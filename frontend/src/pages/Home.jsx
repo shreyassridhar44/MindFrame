@@ -43,9 +43,10 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-teal-900/95 via-cyan-800/80 to-teal-800/90 mix-blend-multiply"></div>
 
         {/* Hero Content */}
-        <div className="relative h-full max-w-7xl mx-auto px-6 flex items-center">
-          {/* Added animation class */}
-          <div className="max-w-2xl animate-fade-in-up">
+        {/* UPDATED: Added 'justify-center' to center the content block horizontally */}
+        <div className="relative h-full max-w-7xl mx-auto px-6 flex items-center justify-center">
+          {/* UPDATED: Added 'text-center' to center all the text and buttons inside */}
+          <div className="max-w-2xl animate-fade-in-up text-center">
             <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20 shadow-md">
               <Sparkles className="w-4 h-4 text-teal-300 animate-pulse" /> {/* Added pulse animation */}
               <span className="text-teal-100 text-sm font-medium">AI-Powered Emotion Detection</span>
@@ -149,3 +150,4 @@ const Home = () => {
 };
 
 export default Home;
+
