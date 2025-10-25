@@ -3,10 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Import your components and pages
 import Navbar from './components/Navbar';
+import HomePage from './pages/Home'; // <-- Import your new Home page
 import DetectorPage from './pages/Detector';
-// You can create and import these other pages later
-// import HomePage from './pages/HomePage'; 
-// import ProfilePage from './pages/ProfilePage';
+// import ProfilePage from './pages/ProfilePage'; // You can add this later
 
 function App() {
   return (
@@ -16,12 +15,11 @@ function App() {
 
       {/* Routes define which page to show based on the URL */}
       <Routes>
-        {/* We'll make the DetectorPage the home page for now */}
-        <Route path="/" element={<DetectorPage />} />
-        <Route path="/detector" element={<DetectorPage />} />
+        {/* This is the fix: */}
+        <Route path="/" element={<HomePage />} /> {/* <-- Root path now shows Home */}
+        <Route path="/detector" element={<DetectorPage />} /> {/* <-- Detector path works */}
         
-        {/* You can add these routes later when you build the pages */}
-        {/* <Route path="/" element={<HomePage />} /> */}
+        {/* You can add this route later when you build the page */}
         {/* <Route path="/profile" element={<ProfilePage />} /> */}
       </Routes>
     </Router>

@@ -8,30 +8,26 @@ const Home = () => {
       icon: Camera,
       title: 'Real-Time Detection',
       description: 'Advanced facial recognition technology analyzes your emotions in real-time through your webcam.',
-      //image: 'https://images.unsplash.com/photo-1663124178716-2078c384c24a'
     },
     {
       icon: Brain,
       title: 'AI-Powered Analysis',
       description: 'Machine learning algorithms detect 7 different emotions with high accuracy and precision.',
-      //image: 'https://images.unsplash.com/photo-1760037034572-24141225b295'
     },
     {
       icon: TrendingUp,
       title: 'Stress Monitoring',
       description: 'Track your stress levels with our intelligent Stress-o-Meter and get personalized insights.',
-      //image: 'https://images.unsplash.com/photo-1760037034697-eee0b07ae072'
     },
     {
       icon: Clock,
       title: 'Session History',
       description: 'Review your emotional patterns and stress trends over time with detailed session logs.',
-      //image: 'https://images.unsplash.com/photo-1568909555342-230fc97f371a'
     }
   ];
 
   return (
-    <div className="min-h-screen pt-20">
+    <div className="min-h-screen pt-20 bg-white"> {/* pt-20 for the fixed navbar */}
       {/* Hero Section */}
       <section className="relative h-[600px] overflow-hidden">
         {/* Background Image with Overlay */}
@@ -76,7 +72,7 @@ const Home = () => {
         
         {/* Decorative Elements */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 0 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white"/>
           </svg>
         </div>
@@ -100,26 +96,20 @@ const Home = () => {
                 key={index}
                 className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
               >
-                {/* Feature Image */}
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={feature.image}
-                    alt={feature.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-teal-600/20 to-transparent"></div>
-                </div>
                 
                 {/* Feature Content */}
                 <div className="p-8">
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="w-7 h-7 text-white" />
+                  {/* --- THIS IS THE CHANGE --- */}
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                      <feature.icon className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {feature.title}
+                    </h3>
                   </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  
+                  {/* --- END OF CHANGE --- */}
+
                   <p className="text-gray-600 leading-relaxed">
                     {feature.description}
                   </p>
