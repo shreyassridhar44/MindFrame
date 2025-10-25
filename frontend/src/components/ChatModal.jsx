@@ -6,14 +6,16 @@ const API_KEY = 'AIzaSyADBg14Y5Ey_wXv0t25HBghdAgZK8UIDyU';
 // --- THIS URL IS NOW FIXED ---
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-// --- Speech Recognition Setup ---
+// --- Speech Recognition Setup (UPDATED) ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 if (SpeechRecognition) {
   recognition = new SpeechRecognition();
-  recognition.continuous = false;
+  // UPDATED: Listen continuously
+  recognition.continuous = true; 
   recognition.lang = 'en-US';
-  recognition.interimResults = false;
+  // UPDATED: Show results as you speak
+  recognition.interimResults = true; 
 }
 
 const ChatModal = ({ isOpen, onClose, averageStress, dominantEmotion }) => {
@@ -33,9 +35,9 @@ const ChatModal = ({ isOpen, onClose, averageStress, dominantEmotion }) => {
 
   // --- Helper: Text-to-Speech ---
   const speakText = (text) => {
-    if (!isTtsEnabled) return;
+    if (!isTtsEnabled || !window.speechSynthesis) return;
     try {
-      window.speechSynthesis.cancel(); // Stop any previous speech
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(utterance);
     } catch (error) {
@@ -43,63 +45,49 @@ const ChatModal = ({ isOpen, onClose, averageStress, dominantEmotion }) => {
     }
   };
 
-  // --- Helper: Format chat history for Gemini API ---
-  const formatHistoryForAPI = () => {
-    return chatHistory.map(msg => ({
-      role: msg.sender === 'ai' ? 'model' : 'user',
-      parts: [{ text: msg.text }]
-    }));
+  // --- API Call Helper ---
+  const fetchGeminiResponse = async (currentPrompt, history = []) => {
+    try {
+      const contents = [
+        ...history.map(msg => ({
+          role: msg.sender === 'ai' ? 'model' : 'user',
+          parts: [{ text: msg.text }]
+        })),
+        { role: 'user', parts: [{ text: currentPrompt }] }
+      ];
+      
+      const response = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: "You are MindFrame, an empathetic AI. Be concise, supportive, and ask follow-up questions." }] }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.candidates && data.candidates[0].content.parts) {
+        return data.candidates[0].content.parts[0].text;
+      }
+      return "I'm unable to respond to that. Let's try talking about something else.";
+
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      return "I'm having trouble connecting right now. Please try again later.";
+    }
   };
 
-  
-const fetchGeminiResponse = async (prompt, history = []) => {
-  try {
-    // Format chat history properly
-    const contents = [
-      ...history.map(msg => ({ parts: [{ text: msg.text }] })),
-      { parts: [{ text: prompt }] }
-    ];
-
-    const response = await fetch(GEMINI_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{
-            text: "You are MindFrame, an empathetic AI. Be concise, supportive, and ask follow-up questions."
-          }]
-        }
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Gemini API Error Response:", errorData);
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
-
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "I'm having trouble connecting right now. Please try again later.";
-  }
-};
-
-
-  // --- Effect: Get initial question when modal opens ---
+  // --- Effect: Get initial question ---
   useEffect(() => {
     if (isOpen) {
       const getInitialQuestion = async () => {
         setIsLoading(true);
         const initialPrompt = `A user just finished a session with an average stress of ${averageStress}% and their dominant emotion was "${dominantEmotion}". Ask them one suitable, open-ended question to start a conversation about their session.`;
-        
         const firstQuestion = await fetchGeminiResponse(initialPrompt, []); 
-        
-        const aiMessage = { sender: 'ai', text: firstQuestion };
-        setChatHistory([aiMessage]);
+        setChatHistory([{ sender: 'ai', text: firstQuestion }]);
         setIsLoading(false);
         speakText(firstQuestion);
       };
@@ -107,7 +95,8 @@ const fetchGeminiResponse = async (prompt, history = []) => {
     } else {
       setChatHistory([]);
       setUserInput('');
-      window.speechSynthesis.cancel();
+      if (recognition && isListening) recognition.stop();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
     }
   }, [isOpen, averageStress, dominantEmotion]);
 
@@ -116,22 +105,21 @@ const fetchGeminiResponse = async (prompt, history = []) => {
     e.preventDefault();
     const messageText = userInput.trim();
     if (!messageText || isLoading) return;
+    if (recognition && isListening) recognition.stop();
 
     const userMessage = { sender: 'user', text: messageText };
     setChatHistory(prev => [...prev, userMessage]);
     setUserInput('');
     setIsLoading(true);
 
-    const formattedHistory = formatHistoryForAPI();
-    const aiResponseText = await fetchGeminiResponse(messageText, formattedHistory);
-    
+    const aiResponseText = await fetchGeminiResponse(messageText, chatHistory);
     const aiMessage = { sender: 'ai', text: aiResponseText };
     setChatHistory(prev => [...prev, aiMessage]);
     setIsLoading(false);
     speakText(aiResponseText);
   };
 
-  // --- Handler: Speech-to-Text ---
+  // --- Handler: Speech-to-Text (UPDATED) ---
   const handleListen = () => {
     if (!recognition) {
       alert("Speech recognition is not supported in your browser.");
@@ -147,20 +135,25 @@ const fetchGeminiResponse = async (prompt, history = []) => {
     recognition.start();
     setIsListening(true);
 
+    // This event fires whenever speech is detected
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setUserInput(transcript);
-      setIsListening(false);
-      setTimeout(() => {
-        document.getElementById('chat-form')?.requestSubmit();
-      }, 0);
+      // Combine all results into a single string
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+      setUserInput(transcript); // Update the input box in real-time
     };
 
     recognition.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
+      if (event.error === 'not-allowed') {
+        alert("Microphone permission was denied. Please allow it in your browser settings.");
+      }
       setIsListening(false);
     };
-
+    
+    // This event fires when recognition is stopped (manually or on its own)
     recognition.onend = () => {
       setIsListening(false);
     };
@@ -169,6 +162,7 @@ const fetchGeminiResponse = async (prompt, history = []) => {
   if (!isOpen) return null;
 
   return (
+    // ... JSX is unchanged, no need to repeat it ...
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
