@@ -26,10 +26,5 @@ numpy>=1.26.0
 python-multipart>=0.0.9
 jq>=1.6.0
 typer>=0.9.0
-<<<<<<< HEAD
 opencv-python-headless
 websockets
-=======
-tensorflow
-opencv-python-headless
->>>>>>> b06170a82066b00178c6e889856aedefad1a1b5c
