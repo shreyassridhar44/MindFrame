@@ -1,15 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, VideoOff, Play, Pause, RefreshCw, BarChart } from 'lucide-react';
+import { Video, Play, Pause, RefreshCw, BarChart } from 'lucide-react';
 
 // Import all your components
 import StressOMeter from '../components/StressOMeter';
 import EmotionChart from '../components/EmotionChart';
 import SessionTimer from '../components/SessionTimer';
 import InsightsPanel from '../components/InsightsPanel';
-import ChatModal from '../components/ChatModal'; // <-- NEW: Import the modal
+import ChatModal from '../components/ChatModal';
 
-// --- Helper Functions (No changes here) ---
-
+// --- Helper Functions ---
 const EMOTIONS_LIST = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral'];
 const EMOTION_COLORS = {
   angry: '#EF4444',
@@ -45,8 +44,7 @@ const calculateStressLevel = (data) => {
   return Math.round(Math.min(stressScore, 1.0) * 100);
 };
 
-// --- The Main Page Component ---
-
+// --- Main Component ---
 const DetectorPage = () => {
   // --- State ---
   const [isActive, setIsActive] = useState(false);
@@ -56,12 +54,14 @@ const DetectorPage = () => {
   const [emotionChartData, setEmotionChartData] = useState(formatDataForChart([]));
   const [dominantEmotion, setDominantEmotion] = useState('neutral');
   const [error, setError] = useState(null);
-  
+
   const [totalStress, setTotalStress] = useState(0);
   const [readingCount, setReadingCount] = useState(0);
   const [averageStress, setAverageStress] = useState(null);
 
-  const [isChatModalOpen, setIsChatModalOpen] = useState(false); // <-- NEW: Modal state
+  const [finalEmotionChartData, setFinalEmotionChartData] = useState(null); // persist chart
+  const [finalStressLevel, setFinalStressLevel] = useState(0); // persist stress
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   // --- Refs ---
   const videoRef = useRef(null);
@@ -70,12 +70,10 @@ const DetectorPage = () => {
   const timerRef = useRef(null); 
 
   // --- Core Functions ---
-
-  /** 1. Starts the webcam and detection */
   const startDetection = async () => {
     setError(null);
-    setAverageStress(null); 
-    
+    setAverageStress(null);
+
     if (!videoRef.current.srcObject) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -100,13 +98,11 @@ const DetectorPage = () => {
     setIsPaused(false);
     
     intervalRef.current = setInterval(captureAndPredict, 1000);
-    
     timerRef.current = setInterval(() => {
       setSessionTime(prev => prev + 1);
     }, 1000);
   };
 
-  /** 2. Pauses the detection */
   const stopDetection = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
@@ -115,20 +111,23 @@ const DetectorPage = () => {
     setIsActive(false);
 
     if (readingCount > 0) {
-      setAverageStress(Math.round(totalStress / readingCount)); 
+      setAverageStress(Math.round(totalStress / readingCount));
     }
+
+    // Persist last captured data
+    setFinalEmotionChartData(emotionChartData);
+    setFinalStressLevel(stressLevel);
   };
 
-  /** 3. Resets the entire session */
   const resetDetection = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
-    
+
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
-    
+
     setIsActive(false);
     setIsPaused(false);
     setSessionTime(0);
@@ -140,20 +139,21 @@ const DetectorPage = () => {
     setTotalStress(0);
     setReadingCount(0);
     setAverageStress(null);
+    setFinalEmotionChartData(null);
+    setFinalStressLevel(0);
   };
 
-  /** 4. Captures a single frame and sends it to the API */
   const captureAndPredict = async () => {
     if (!videoRef.current || !canvasRef.current || !videoRef.current.srcObject) return;
 
     const context = canvasRef.current.getContext('2d');
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
-    
+
     context.translate(videoRef.current.videoWidth, 0);
     context.scale(-1, 1);
     context.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
-    
+
     const base64Image = canvasRef.current.toDataURL('image/jpeg');
 
     try {
@@ -165,13 +165,13 @@ const DetectorPage = () => {
 
       if (!response.ok) throw new Error('API request failed');
 
-      const data = await response.json(); 
+      const data = await response.json();
 
       const newStressLevel = calculateStressLevel(data.all_predictions);
-      
+
       setStressLevel(newStressLevel);
       setEmotionChartData(formatDataForChart(data.all_predictions));
-      setDominantEmotion(data.emotion); // <-- MODIFIED: Keep setting dominant emotion
+      setDominantEmotion(data.emotion);
 
       setTotalStress(prevTotal => prevTotal + newStressLevel);
       setReadingCount(prevCount => prevCount + 1);
@@ -181,23 +181,21 @@ const DetectorPage = () => {
     }
   };
 
-  // --- Cleanup Effect ---
   useEffect(() => {
     return () => {
-      resetDetection(); 
+      resetDetection();
     };
   }, []);
-  
+
   const hasStarted = sessionTime > 0;
 
-  // --- JSX Layout ---
   return (
-    <> {/* <-- NEW: Use Fragment to allow modal to be a sibling */}
+    <>
       <div className="pt-24 pb-12 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* --- Left Column (Video + Controls) --- */}
+
+            {/* Left Column */}
             <div className="space-y-6">
               <div className="bg-black rounded-2xl shadow-lg overflow-hidden border border-gray-200 aspect-video w-full">
                 {!hasStarted && !isActive && (
@@ -216,7 +214,7 @@ const DetectorPage = () => {
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
               </div>
 
-              {averageStress !== null && ( 
+              {averageStress !== null && (
                 <div className="bg-white border-2 border-teal-500 p-4 rounded-2xl shadow-lg text-center">
                   <div className="flex items-center justify-center space-x-2 text-teal-700">
                     <BarChart className="w-5 h-5" />
@@ -227,7 +225,6 @@ const DetectorPage = () => {
                 </div>
               )}
 
-              {/* --- Control Buttons --- */}
               <div className="grid grid-cols-3 gap-4">
                 <button
                   onClick={startDetection}
@@ -239,7 +236,7 @@ const DetectorPage = () => {
                   <Play className="w-5 h-5" />
                   <span>{isPaused ? 'Resume' : 'Start'}</span>
                 </button>
-                
+
                 <button
                   onClick={stopDetection}
                   disabled={!isActive}
@@ -262,7 +259,7 @@ const DetectorPage = () => {
                   <span>Reset</span>
                 </button>
               </div>
-              
+
               <SessionTimer 
                 isActive={isActive} 
                 sessionTime={sessionTime} 
@@ -277,33 +274,30 @@ const DetectorPage = () => {
               )}
             </div>
 
-            {/* --- Right Column (Data Widgets) --- */}
+            {/* Right Column */}
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <StressOMeter 
-                  stressLevel={stressLevel} 
+                  stressLevel={isActive ? stressLevel : finalStressLevel} 
                   isActive={isActive || hasStarted} 
                 />
                 <EmotionChart 
-                  emotions={emotionChartData} 
+                  emotions={isActive ? emotionChartData : finalEmotionChartData || emotionChartData} 
                   isActive={isActive || hasStarted} 
                 />
               </div>
-              
-              {/* --- MODIFIED: Pass new props to InsightsPanel --- */}
+
               <InsightsPanel 
                 dominantEmotion={dominantEmotion}
                 averageStress={averageStress}
                 isActive={isActive} 
-                setIsChatModalOpen={setIsChatModalOpen} // <-- NEW PROP
+                setIsChatModalOpen={setIsChatModalOpen} 
               />
             </div>
           </div>
         </div>
       </div>
-      
-      {/* --- NEW: Render the Chat Modal --- */}
-      {/* We only render the modal if a session has ended, to pass valid props */}
+
       {averageStress !== null && (
         <ChatModal 
           isOpen={isChatModalOpen}

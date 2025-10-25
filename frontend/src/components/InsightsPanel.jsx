@@ -1,51 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import { Lightbulb, Sparkles, MessageSquare } from 'lucide-react';
 
-// --- PUT YOUR NEW OPENAI API KEY HERE ---
-const OPENAI_API_KEY = "sk-1234abcd5678efgh1234abcd5678efgh1234abcd";
+// --- PUT YOUR *NEW* GEMINI API KEY HERE ---
+const API_KEY = 'AIzaSyADBg14Y5Ey_wXv0t25HBghdAgZK8UIDyU';
+// --- THIS URL IS NOW FIXED ---
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
 const InsightsPanel = ({ dominantEmotion, averageStress, isActive, setIsChatModalOpen }) => {
   const [insight, setInsight] = useState('Start a detection session to receive personalized insights.');
   const [isLoading, setIsLoading] = useState(false);
 
+  // This effect now fetches a SUMMARY when the session stops
   useEffect(() => {
+    // Check if the session just stopped (isActive is false, but averageStress just got a number)
     if (!isActive && averageStress !== null) {
       const getSessionSummary = async () => {
-        if (!OPENAI_API_KEY || OPENAI_API_KEY.startsWith("sk-xxxx")) {
-          setInsight("Please add your new OpenAI API key to enable session summaries.");
+        if (API_KEY === "PASTE_YOUR_NEW_API_KEY_HERE") {
+          setInsight("Please add your new Gemini API key to InsightsPanel.jsx to enable summaries.");
           return;
         }
 
         setIsLoading(true);
-
-        const prompt = `A user finished a session. Dominant emotion: "${dominantEmotion}". Average stress: ${averageStress}%. 
-        Provide a warm, supportive 2-3 sentence summary. Avoid markdown formatting.`;
+        const prompt = `A user just finished an emotion detection session. Their dominant emotion was "${dominantEmotion}" and their average stress level was ${averageStress}%. 
+        Provide a short, one-paragraph summary (2-3 sentences) of this session. Be empathetic and constructive. Do not use markdown.`;
 
         try {
-          const response = await fetch("https://api.openai.com/v1/responses", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${OPENAI_API_KEY}`
-            },
+          const response = await fetch(`${GEMINI_API_URL}${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                { role: "system", content: "You are MindFrame, an empathetic emotional wellness guide." },
-                { role: "user", content: prompt }
-              ],
-              temperature: 0.7,
-              max_output_tokens: 150
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 150,
+              }
             })
           });
 
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Gemini API Error Response:", errorData);
+            throw new Error(`API request failed with status ${response.status}`);
+          }
+
           const data = await response.json();
-          const summary = data.output_text?.trim() || "No summary available.";
-          setInsight(summary);
+          const newInsight = data.candidates[0].content.parts[0].text;
+          setInsight(newInsight.trim());
 
         } catch (error) {
-          console.error("OpenAI API Error:", error);
-          setInsight("Couldn't generate summary. Please try again later.");
+          console.error("Gemini API Error:", error);
+          setInsight("Could not fetch a session summary. Please check the console for details.");
         } finally {
           setIsLoading(false);
         }
@@ -53,18 +57,20 @@ const InsightsPanel = ({ dominantEmotion, averageStress, isActive, setIsChatModa
 
       getSessionSummary();
     }
-
+    
+    // Reset insight if session is active
     if (isActive) {
-      setInsight('Your session is live. A summary will appear when you pause.');
+      setInsight('Your session is live. A summary will be generated when you pause.');
       setIsLoading(false);
     }
 
+    // Reset insight if session is reset (averageStress goes back to null)
     if (averageStress === null) {
-      setInsight('Start a detection session to receive personalized insights.');
-      setIsLoading(false);
+        setInsight('Start a detection session to receive personalized insights.');
+        setIsLoading(false);
     }
 
-  }, [averageStress, dominantEmotion, isActive]);
+  }, [averageStress, dominantEmotion, isActive]); // Re-run when these change
 
   const sessionHasEnded = !isActive && averageStress !== null;
 
@@ -90,21 +96,23 @@ const InsightsPanel = ({ dominantEmotion, averageStress, isActive, setIsChatModa
         )}
       </div>
       
+      {/* Quick Tips & Chat Button --- */}
       <div className="mt-6 flex items-start gap-4">
         <div className="flex-1 space-y-3">
           <h3 className="text-sm font-semibold text-gray-700">Quick Tips:</h3>
           <div className="space-y-2">
             <div className="flex items-start space-x-2">
-              <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2"></div>
-              <p className="text-sm text-gray-600">Take deep breaths when stress rises.</p>
+              <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+              <p className="text-sm text-gray-600">Take deep breaths when stress levels rise</p>
             </div>
             <div className="flex items-start space-x-2">
-              <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2"></div>
-              <p className="text-sm text-gray-600">Short breaks improve emotional balance.</p>
+              <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+              <p className="text-sm text-gray-600">Regular breaks improve emotional balance</p>
             </div>
           </div>
         </div>
 
+        {/* --- Chat with AI Button --- */}
         {sessionHasEnded && (
           <button 
             onClick={() => setIsChatModalOpen(true)}
