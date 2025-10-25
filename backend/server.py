@@ -175,7 +175,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     # This must include your React app's URL (e.g., "http://localhost:3000")
-    allow_origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(','),
+    allow_origins=os.environ.get('CORS_ORIGINS', 'https://mindframe-1.onrender.com').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )

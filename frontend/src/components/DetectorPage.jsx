@@ -162,7 +162,7 @@ const DetectorPage = () => {
 
     try {
       // Send to backend API (running on port 8000)
-      const response = await fetch('http://localhost:8000/api/predict-emotion', {
+      const response = await fetch('https://mindframe-1.onrender.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image }),
